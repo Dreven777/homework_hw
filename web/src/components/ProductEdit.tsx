@@ -8,6 +8,7 @@ const ProductEditForm = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<any>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackBarMessage, setMessage] = useState('');
   const navigate = useNavigate();  
 
   useEffect(() => {
@@ -26,18 +27,39 @@ const ProductEditForm = () => {
       description: product?.description || '',
       price: product?.price || 0,
     },
-    validate: (values) => {
+    validate: (values: { name: string; description: string; price: number }) => {
       const errors: { [key: string]: string } = {};
-      if (!values.name) errors.name = 'Введить назву товару';
-      if (!values.description) errors.description = 'Введить опис товару';
-      if (values.price <= 0) errors.price = 'Введить ціну товару вищу 0';
+    
+      const nameRegex = /^[a-zA-Z0-9]{1,30}$/;
+      const descriptionRegex = /^[a-zA-Z0-9\s.,]{1,200}$/;
+      const priceRegex = /^[0-9]{1,4}$/;
+    
+      if (!values.name) {
+        errors.name = 'Введить назву товару';
+      } else if (!nameRegex.test(values.name)) {
+        errors.name = 'Назва товару має бути від 1 до 30 символів';
+      }
+    
+      if (!values.description) {
+        errors.description = 'Введить опис товару';
+      } else if (!descriptionRegex.test(values.description)) {
+        errors.description = 'Опис товару має бути від 1 до 200 символів';
+      }
+    
+      if (!values.price) {
+        errors.price = 'Введить ціну товару';
+      } else if (!priceRegex.test(values.price.toString())) {
+        errors.price = 'Ціна товару має бути від 1 до 9999';
+      }
+    
       return errors;
-    },
+    }, 
     onSubmit: async (values) => {
       try {
         if (product?._id) {
-          await updateProduct(product._id, values);
+          const res = await updateProduct(product._id, values);
           setOpenSnackbar(true);
+          setMessage(res.message);
           setTimeout(() => {
             navigate('/products'); 
           }, 1000);
@@ -92,7 +114,7 @@ const ProductEditForm = () => {
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
-        message="Продукт змінено!"
+        message={snackBarMessage}
       />
     </div>
   );

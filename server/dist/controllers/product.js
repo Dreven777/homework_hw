@@ -57,17 +57,32 @@ exports.deleteProduct = deleteProduct;
 const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        res.status(400).json({ errors: errors.array() });
+        return;
     }
     try {
-        const product = yield product_1.default.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const product = yield product_1.default.findById(req.params.id);
         if (!product) {
-            return res.status(404).json({ message: 'Продукт не знайдено' });
+            res.status(404).json({ message: 'Продукт не знайдено' });
+            return;
         }
-        res.json(product);
+        const isChanged = Object.keys(req.body).some((key) => {
+            return req.body[key] !== product[key];
+        });
+        if (!isChanged) {
+            res.status(200).json({ message: 'Продукт не змінено' });
+            console.log('Response sent:', { message: 'Продукт не змінено' });
+            return;
+        }
+        else {
+            yield product_1.default.findByIdAndUpdate(req.params.id, req.body, { new: true });
+            res.status(200).json({ message: 'Продукт змінено' });
+            console.log('Response sent:', { message: 'Продукт змінено' });
+        }
     }
     catch (err) {
-        res.status(500).json({ message: err });
+        console.error(err);
+        res.status(500).json({ message: 'Внутрішня помилка сервера' });
     }
 });
 exports.updateProduct = updateProduct;

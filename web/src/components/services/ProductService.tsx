@@ -18,5 +18,6 @@ export const deleteProduct = async (id: string) => {
 
 export const updateProduct = async (id: string, product: { name: string, description: string, price: number }) => {
   const response = await axios.put(`${API_URL}/product/${id}`, product);
+  console.log('Response from server:', response.data); 
   return response.data;
 };
