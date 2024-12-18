@@ -4,10 +4,15 @@ import Product from './../models/product';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find();
+    const { search } = req.query; 
+
+    const filter = search ? { name: { $regex: search as string, $options: 'i' } } : {}; 
+
+    const products = await Product.find(filter);
+    
     res.json(products);
   } catch (err) {
-    res.status(500).json({ message: err });
+    res.status(500).json({ message: err || 'Щось пішло не так' });
   }
 };
 

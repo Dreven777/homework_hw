@@ -17,11 +17,14 @@ const express_validator_1 = require("express-validator");
 const product_1 = __importDefault(require("./../models/product"));
 const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const products = yield product_1.default.find();
+        const { search } = req.query;
+        const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
+        const products = yield product_1.default.find(filter);
         res.json(products);
+        console.log(products);
     }
     catch (err) {
-        res.status(500).json({ message: err });
+        res.status(500).json({ message: err || 'Щось пішло не так' });
     }
 });
 exports.getProducts = getProducts;

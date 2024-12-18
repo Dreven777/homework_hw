@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts, deleteProduct } from './services/ProductService';
-import { Button, Card, CardContent, Typography, IconButton, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { Button, Card, CardContent, Typography, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const data = await getProducts();
+      const data = await getProducts(searchQuery);
       setProducts(data);
+      setFilteredProducts(data);
     };
     fetchProducts();
-  }, []);
+  }, [searchQuery]); 
 
   const handleDeleteClick = (id: string) => {
     setProductToDelete(id);
@@ -27,6 +30,7 @@ const ProductList = () => {
     if (productToDelete) {
       await deleteProduct(productToDelete);
       setProducts(products.filter(product => product._id !== productToDelete));
+      setFilteredProducts(filteredProducts.filter(product => product._id !== productToDelete));
       setOpenDeleteDialog(false);
     }
   };
@@ -35,12 +39,28 @@ const ProductList = () => {
     navigate(`/products/edit/${productId}`);
   };
 
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const query = event.target.value;
+    setSearchQuery(query); 
+  };
+
   return (
     <div>
       <Button variant="contained" color="primary" onClick={() => navigate('/products/add')}>
         Додати новий продукт
       </Button>
-      {products.map((product) => (
+      
+      <br/>
+
+      <TextField
+        label="Пошук продуктів"
+        variant="outlined"
+        value={searchQuery}
+        onChange={handleSearchChange} 
+        style={{ margin: '20px 0', width: '300px' }}
+      />
+
+      {filteredProducts.map((product) => (
         <Card key={product._id} style={{ marginBottom: '10px' }}>
           <CardContent>
             <Typography variant="h6">{product.name}</Typography>
