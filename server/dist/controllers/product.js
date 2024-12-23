@@ -17,11 +17,34 @@ const express_validator_1 = require("express-validator");
 const product_1 = __importDefault(require("./../models/product"));
 const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { search } = req.query;
-        const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
-        const products = yield product_1.default.find(filter);
-        res.json(products);
-        console.log(products);
+        const { search = '', limit = 10, cursor = null } = req.query;
+        const filter = search
+            ? { name: { $regex: search, $options: 'i' } }
+            : {};
+        const queryLimit = Number(limit);
+        console.log(cursor);
+        const queryCursor = cursor ? { _id: { $gt: cursor } } : {}; // Фильтруем, начиная с текущего курсора (ID последнего товара)
+        // Используем фильтр для поиска и курсор для пагинации
+        const products = yield product_1.default.find(Object.assign(Object.assign({}, filter), queryCursor))
+            .sort({ _id: 1 }) // Сортировка по _id для последовательности
+            .limit(queryLimit)
+            .exec();
+        // Для подсчета общего количества товаров без учета пагинации
+        const totalProducts = yield product_1.default.countDocuments(filter);
+        // Подсчитываем среднюю цену товаров
+        const avgPriceResult = yield product_1.default.aggregate([
+            { $match: filter }, // Применяем фильтр
+            { $group: { _id: null, avgPrice: { $avg: "$price" } } } // Группируем и вычисляем среднюю цену
+        ]);
+        const avgPrice = avgPriceResult.length > 0 ? avgPriceResult[0].avgPrice : 0;
+        const totalPages = Math.ceil(totalProducts / queryLimit);
+        res.json({
+            products,
+            totalProducts,
+            totalPages,
+            cursor: products.length > 0 ? products[products.length - 1]._id : null, // Новый курсор (ID последнего товара на текущей странице)
+            avgPrice, // Добавляем среднюю цену в ответ
+        });
     }
     catch (err) {
         res.status(500).json({ message: err || 'Щось пішло не так' });

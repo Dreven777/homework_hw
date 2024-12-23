@@ -6,20 +6,26 @@ import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
   const [products, setProducts] = useState<any[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [avgPrice, setAvgPrice] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [cursor, setCursor] = useState<string | null>(null);  
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const data = await getProducts(searchQuery);
-      setProducts(data);
-      setFilteredProducts(data);
+      const data = await getProducts(searchQuery, cursor);
+      setProducts(data.products);
+      setAvgPrice(data.avgPrice);
+      setTotalPages(data.totalPages);
+      // Set cursor to the last product's _id in the current response
+      setCursor(data.cursor);
     };
     fetchProducts();
-  }, [searchQuery]); 
+  }, [searchQuery, currentPage]);
 
   const handleDeleteClick = (id: string) => {
     setProductToDelete(id);
@@ -30,7 +36,6 @@ const ProductList = () => {
     if (productToDelete) {
       await deleteProduct(productToDelete);
       setProducts(products.filter(product => product._id !== productToDelete));
-      setFilteredProducts(filteredProducts.filter(product => product._id !== productToDelete));
       setOpenDeleteDialog(false);
     }
   };
@@ -41,26 +46,34 @@ const ProductList = () => {
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
-    setSearchQuery(query); 
+    setSearchQuery(query);
+    setCurrentPage(1);
+    setCursor(null); 
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   return (
     <div>
+      <div color="primary" style={{fontSize: '20px', fontWeight: 'bold'}}>Середня ціна {avgPrice.toFixed(2)} ₴</div>
+      <br/>
       <Button variant="contained" color="primary" onClick={() => navigate('/products/add')}>
         Додати новий продукт
       </Button>
-      
-      <br/>
+
+      <br />
 
       <TextField
         label="Пошук продуктів"
         variant="outlined"
         value={searchQuery}
-        onChange={handleSearchChange} 
+        onChange={handleSearchChange}
         style={{ margin: '20px 0', width: '300px' }}
       />
 
-      {filteredProducts.map((product) => (
+      {products.map((product) => (
         <Card key={product._id} style={{ marginBottom: '10px' }}>
           <CardContent>
             <Typography variant="h6">{product.name}</Typography>
@@ -90,6 +103,26 @@ const ProductList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+        <Button
+          variant="outlined"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Попередня
+        </Button>
+        <Typography style={{ margin: '0 15px', display: 'flex', alignItems: 'center' }}>
+          Сторінка {currentPage} з {totalPages}
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Наступна
+        </Button>
+      </div>
     </div>
   );
 };

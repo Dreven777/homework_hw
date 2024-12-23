@@ -4,17 +4,47 @@ import Product from './../models/product';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { search } = req.query; 
+    const { search = '', limit = 10, cursor = null } = req.query;
 
-    const filter = search ? { name: { $regex: search as string, $options: 'i' } } : {}; 
+    const filter: Record<string, any> = search
+      ? { name: { $regex: search as string, $options: 'i' } }
+      : {};
 
-    const products = await Product.find(filter);
+    const queryLimit = Number(limit);
+    console.log(cursor);
+    const queryCursor = cursor ? { _id: { $gt: cursor } } : {};  
+
+    const products = await Product.find({ ...filter, ...queryCursor })
+      .sort({ _id: 1 })  
+      .limit(queryLimit)
+      .exec();
+
+    const totalProducts = await Product.countDocuments(filter);
     
-    res.json(products);
+    const avgPriceResult = await Product.aggregate([
+      { $match: filter }, 
+      { $group: { _id: null, avgPrice: { $avg: "$price" } } }
+    ]);
+
+    const avgPrice = avgPriceResult.length > 0 ? avgPriceResult[0].avgPrice : 0;
+
+    const totalPages = Math.ceil(totalProducts / queryLimit);
+
+    res.json({
+      products,
+      totalProducts,
+      totalPages,
+      cursor: products.length > 0 ? products[products.length - 1]._id : null,
+      avgPrice, 
+    });
   } catch (err) {
     res.status(500).json({ message: err || 'Щось пішло не так' });
   }
 };
+
+
+
+
 
 export const createProduct = async (req: any, res: any) => {
 
