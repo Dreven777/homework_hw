@@ -8,6 +8,7 @@ const product_1 = require("../controllers/product");
 const express_validator_1 = require("express-validator");
 const router = express_1.default.Router();
 router.get('/products', product_1.getProducts);
+router.get('/product/:id', product_1.getProduct);
 router.post('/product', [
     (0, express_validator_1.check)('name')
         .matches(/^[a-zA-Z0-9]{1,30}$/)

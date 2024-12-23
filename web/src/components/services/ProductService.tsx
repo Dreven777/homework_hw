@@ -13,6 +13,15 @@ export const getProducts = async (searchQuery: string = '', cursor: string | nul
   return response.data;
 };
 
+export const getProduct = async (id: string = '') => {
+  const response = await axios.get(`${API_URL}/product/${id}`, {
+    params: {
+      id: id
+    },
+  });
+  return response.data;
+};
+
 
 export const createProduct = async (product: { name: string, description: string, price: number }) => {
   const response = await axios.post(`${API_URL}/product`, product);

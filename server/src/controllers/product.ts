@@ -42,6 +42,19 @@ export const getProducts = async (req: Request, res: Response) => {
   }
 };
 
+export const getProduct = async (req: any, res: any) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(500).json({ message: 'Продукт не знайдено' });
+    }
+    res.json({
+      product
+    });
+  } catch (err) {
+    res.status(500).json({ message: err });
+  }
+};
 
 
 

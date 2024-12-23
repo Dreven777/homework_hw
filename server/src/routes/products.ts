@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getProducts,
+  getProduct,
   createProduct,
   deleteProduct,
   updateProduct,
@@ -10,6 +11,7 @@ import { check } from 'express-validator';
 const router = express.Router();
 
 router.get('/products', getProducts);
+router.get('/product/:id', getProduct);
 
 router.post(
   '/product',

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProduct = exports.deleteProduct = exports.createProduct = exports.getProducts = void 0;
+exports.updateProduct = exports.deleteProduct = exports.createProduct = exports.getProduct = exports.getProducts = void 0;
 const express_validator_1 = require("express-validator");
 const product_1 = __importDefault(require("./../models/product"));
 const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -23,18 +23,15 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             : {};
         const queryLimit = Number(limit);
         console.log(cursor);
-        const queryCursor = cursor ? { _id: { $gt: cursor } } : {}; // Фильтруем, начиная с текущего курсора (ID последнего товара)
-        // Используем фильтр для поиска и курсор для пагинации
+        const queryCursor = cursor ? { _id: { $gt: cursor } } : {};
         const products = yield product_1.default.find(Object.assign(Object.assign({}, filter), queryCursor))
-            .sort({ _id: 1 }) // Сортировка по _id для последовательности
+            .sort({ _id: 1 })
             .limit(queryLimit)
             .exec();
-        // Для подсчета общего количества товаров без учета пагинации
         const totalProducts = yield product_1.default.countDocuments(filter);
-        // Подсчитываем среднюю цену товаров
         const avgPriceResult = yield product_1.default.aggregate([
-            { $match: filter }, // Применяем фильтр
-            { $group: { _id: null, avgPrice: { $avg: "$price" } } } // Группируем и вычисляем среднюю цену
+            { $match: filter },
+            { $group: { _id: null, avgPrice: { $avg: "$price" } } }
         ]);
         const avgPrice = avgPriceResult.length > 0 ? avgPriceResult[0].avgPrice : 0;
         const totalPages = Math.ceil(totalProducts / queryLimit);
@@ -42,8 +39,8 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             products,
             totalProducts,
             totalPages,
-            cursor: products.length > 0 ? products[products.length - 1]._id : null, // Новый курсор (ID последнего товара на текущей странице)
-            avgPrice, // Добавляем среднюю цену в ответ
+            cursor: products.length > 0 ? products[products.length - 1]._id : null,
+            avgPrice,
         });
     }
     catch (err) {
@@ -51,6 +48,22 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getProducts = getProducts;
+const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const product = yield product_1.default.findById(req.params.id);
+        console.log(req);
+        if (!product) {
+            return res.status(500).json({ message: 'Продукт не знайдено' });
+        }
+        res.json({
+            product
+        });
+    }
+    catch (err) {
+        res.status(500).json({ message: err });
+    }
+});
+exports.getProduct = getProduct;
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {

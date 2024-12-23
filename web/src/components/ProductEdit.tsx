@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import { TextField, Button, Snackbar } from '@mui/material';
-import { getProducts, updateProduct } from './services/ProductService';
+import { getProduct, updateProduct } from './services/ProductService';
 
 const ProductEditForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,10 +11,14 @@ const ProductEditForm = () => {
   const [snackBarMessage, setMessage] = useState('');
   const navigate = useNavigate();  
 
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [cursor, setCursor] = useState<string | null>(null);  
+
   useEffect(() => {
     const fetchProduct = async () => {
-      const data = await getProducts();
-      const currentProduct = data.find((p: any) => p._id === id);
+      const data = await getProduct(id);
+      console.log(data);
+      const currentProduct = data.product;
       setProduct(currentProduct);
     };
     fetchProduct();
